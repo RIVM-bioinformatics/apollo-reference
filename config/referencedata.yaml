@@ -1,0 +1,4 @@
+---
+# default for apollo-reference, apollo-mapping, ...
+# TODO: see IRODs remark in apollo_reference/referencedata.py
+reference_data_dir: /mnt/db/apollo/reference

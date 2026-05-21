@@ -1,0 +1,20 @@
+name: download_reference_dataset
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::python>=3.9
+  - conda-forge::pyyaml==6.0
+  - bioconda::sra-tools>=3.4.1
+  - conda-forge::ncbi-datasets-cli
+  - conda-forge::xlsx2csv
+  - conda-forge:csvkit
+  - bioconda::minimap2>=2.28
+  - bioconda::samtools>=1.19
+  # eutils=https://eutils.ncbi.nlm.nih.gov/entrez/eutils
+  #efetch=$eutils/efetch.fcgi
+  #esearch=$eutils/esearch.fcgi
+  - pip>=23.*
+  - pip:
+    - -r ../../requirements.txt

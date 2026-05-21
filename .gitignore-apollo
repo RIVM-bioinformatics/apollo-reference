@@ -1,0 +1,3 @@
+
+# exclude 'utils' directory, being (historically) used for locally installed workflow tools
+utils/

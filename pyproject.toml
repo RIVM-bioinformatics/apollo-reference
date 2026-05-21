@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0.0","setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "apollo-reference"
+requires-python = ">=3.10"
+description = "apollo-reference code base supporting multi-reference genomes for apollo-*** pipelines"
+readme = "README.md"
+license = {text = "AGPLv3"}
+authors = [
+    { name = "Ate van der Burgt" },
+    { name = "Sofie Hofman" },
+    { email = "ids-bioinformatics@rivm.nl" },
+]
+##dynamic = ["version"] # see ViroConstrictor. Get from <package>/__init__.py
+##version = "0.0.1"
+dynamic = [
+    "dependencies",
+    "version"
+]
+
+[tool.setuptools]
+include-package-data = true
+packages = ["apollo_reference"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}

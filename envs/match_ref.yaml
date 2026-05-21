@@ -1,0 +1,12 @@
+name: match_ref
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::python>=3.9
+  - bioconda::minimap2>=2.28
+  - bioconda::samtools>=1.19
+  - pip>=23.*
+  - pip:
+    - -r ../../requirements.txt
