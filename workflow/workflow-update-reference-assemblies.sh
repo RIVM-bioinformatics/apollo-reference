@@ -189,12 +189,6 @@ $scriptsdir/link-accession-to-SRR.sh $outdir
 $scriptsdir/link-accession-to-SRR.sh $outdir $download_fastq_flag
 
 # 6. generate "final" reference assembly data sheet
-python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir | tee /dev/stderr > $tsv
-cp $tsv $outdir
-ls -al $tsv $outdir/$(basename $tsv)
-echo "# EOF=1 [generate_reference_assembly_dataframe.py]"
-
-# 6. generate "final" reference assembly data sheet
 python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir | tee /dev/stderr > $refdata_tsv
 # make sure the refdata_tsv - corresponding to the xlsx - is copied the repo itself too! 
 cp $refdata_tsv $datadir/$(basename $refdata_tsv)
