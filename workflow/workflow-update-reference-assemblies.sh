@@ -4,13 +4,19 @@
 # This pipeline handles all what's shown in files/apollo-reference.drawio(.png)
 #
 
-help_text="$(basename $0) --out [/PATH/TO/OUT/DIR]"
+help_text="$(basename $0) --out [/PATH/TO/OUT/DIR] [ --download-fastq ]"
 
+# TODO: once hard-coding to Apollo_clinical_Candida_species.xlsx is released, update help_text and parse_args() 
 #help_text="$(basename $0) --tsv [/PATH/TO/XLSX2CSV/APPOINTED/references.tsv] --out [/PATH/TO/OUT/DIR]"
 #tsv=""
 
+# arguments obtained from parse_args()
 outdir=""
 verbose=false
+download_fastq=false
+download_fastq_flag=""
+
+# variables stating (sub)folders in this repo 
 thisdir=$(dirname $(readlink -f $0))
 packagedir=$(dirname $thisdir)
 datadir=$packagedir/data
@@ -22,6 +28,11 @@ function parse_args() {
     case $1 in
       --verbose|-v)
         verbose=true
+        shift
+        ;;
+      --download-fastq)
+        download_fastq=true
+        download_fastq_flag="--download --recreate"
         shift
         ;;
       # TODO: needed once hardcoded xlsx is replaced by tsv input
@@ -68,11 +79,9 @@ function parse_args() {
 # files (and names) are in this repo and are hard-coded here.
 xlsx=$datadir/Apollo_clinical_Candida_species.xlsx
 tsv=$datadir/supported-reference-species.tsv
+
 colname_ref_accession="Reference accession"
 colname_MT_accession="Mitochondrion accession"
-
-echo "# xlsx: $xlsx"
-echo "# tsv : $tsv"
 
 function convert_xlsx_to_tsv() {
   # convert the appointed xlsx into appointed tsv file
@@ -85,11 +94,17 @@ function convert_xlsx_to_tsv() {
 
   function regenerate_tsv_from_xlsx() {
     xlsx2csv $xlsx -d '\t' > $tsv
-    # remove 100% empty columns (by-product of xlsx2csv.py)
+    # fix empty rows/cols: typical by-product of xlsx2csv i.c.w. Excel/LibreOffice combination
+    # remove 100% empty columns
     while [ $(awk -F'\t' '{ print $NF }' $tsv  | sed '/^$/d' | wc -l) -eq 0 ]; do
       sed 's/\t$//' $tsv > $tsv.tmp
        mv $tsv.tmp $tsv
     done
+    wc -l $tsv
+    # remove 100% empty rows
+    cat $tsv | sed '/^\s*$/d' > $tsv.tmp
+    mv $tsv.tmp $tsv
+    wc -l $tsv
     }
 
   if [ ! -f $xlsx ]; then
@@ -115,8 +130,12 @@ function convert_xlsx_to_tsv() {
 # parse arguments & start script
 parse_args "$@"
 
-# NOT NEEDED YET ...
-#. $scriptsdir/build-helpers.sh
+# mind duplicated variable name in build-helpers.sh
+refdata_tsv=$outdir/reference_assembly_data.tsv
+
+echo "# xlsx        : $xlsx"
+echo "# (input_)tsv : $tsv"
+echo "# refdata_tsv : $refdata_tsv"
 
 # create output subdirectories
 mkdir -p $outdir/WGS
@@ -132,7 +151,9 @@ head $tsv | csvlook -t -I;
 # !important! need to keep the tsv in the outdir too (for build_helpers.sh input_tsv)
 cp $tsv $outdir/$(basename $tsv)
 
-# 2a. convert into plain list of accessions(.txt)
+# TODO: add validation of the xlsx with the available python code stated in this repo ....
+
+# 2a. convert into plain list of accessions(.txt). This is the "queue" file for this workflow
 awk -F'\t' '{ if ($3!=1 && $8!="RIVM") { print $0 } }' $tsv \
   | csvcut -t -c "$colname_ref_accession" | sed 1d \
   > $outdir/accessions.txt
@@ -165,12 +186,20 @@ $scriptsdir/download-mito-accessions.sh $outdir
 $scriptsdir/link-accession-to-SRR.sh $outdir
 
 # 5b. and subsequently download these SRR PE fastq datasets
-$scriptsdir/link-accession-to-SRR.sh $outdir --download
+$scriptsdir/link-accession-to-SRR.sh $outdir $download_fastq_flag
 
-if [ 1 -eq 0 ]; then
-  # 6. generate "final" reference assembly data sheet
-  python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir
-fi
+# 6. generate "final" reference assembly data sheet
+python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir | tee /dev/stderr > $tsv
+cp $tsv $outdir
+ls -al $tsv $outdir/$(basename $tsv)
+echo "# EOF=1 [generate_reference_assembly_dataframe.py]"
+
+# 6. generate "final" reference assembly data sheet
+python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir | tee /dev/stderr > $refdata_tsv
+# make sure the refdata_tsv - corresponding to the xlsx - is copied the repo itself too! 
+cp $refdata_tsv $datadir/$(basename $refdata_tsv)
+ls -al $refdata_tsv $datadir/$(basename $refdata_tsv)
+echo "# EOF=1 [generate_reference_assembly_dataframe.py]"
 
 # 7. generate per-species reference (including mitochondrion, if applicable)
 $scriptsdir/build-species-references.sh $outdir

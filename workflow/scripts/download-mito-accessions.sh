@@ -10,8 +10,12 @@ refdir=$1 || true
 validate_refdir $refdir
 set -eu
 
-# not used (yet) force re-downloading / recreation of existing data
+# --recreate not used (yet) force re-downloading / recreation of existing data
 recreate=0
+# don't set to small --> {"error":"API rate limit exceeded", ... }
+sleep_interval_sec=3
+
+# cd to refdir and start the (incremental) downloading!
 cd $refdir
 
 function report_tsv() {
@@ -56,6 +60,40 @@ rm -f provided.mitochondria.tsv
 touch selected.mitochondria.tsv
 touch provided.mitochondria.tsv
 
+
+function qc_fasta_download() {
+    # Check if freshly downloaded file is a downloaded fasta
+    # If so, return status 1
+    # If not, return status 0 (but first cleanup & increase variable sleep_interval_sec)
+    #
+    # Main reason to have this as a function is because of "NCBI downloading issues":
+    # - mostly {"error":"API rate limit exceeded", ... }
+    # - server down
+    # These 1th scenario is tried to be solved by increasing sleep time
+    #
+    retry=$1
+    fa=$2
+    if [ $(grep -c "{" $fa) -ge 1 ] && [ $retry -eq 4 ]; then
+      echo "error: error downloading from NCBI" 1>&2
+      cat $fa 1>&2
+      exit 1
+    elif [ $(grep -c "{" $fa) -ge 1 ]; then
+      # typically {"error":"API rate limit exceeded", ... }.
+      # trigger slower download speed and try again
+      echo "warning: $(cat $fa | head -n 1)" 1>&2
+      rm -f $fa
+      sleep_interval_sec=$(( $sleep_interval_sec + 3 ))
+      sleep $sleep_interval_sec
+      echo 0
+    else
+      # succesfully downloaded
+      sleep $sleep_interval_sec
+      echo 1
+    fi
+    }
+
+
+
 # first, download provided MT accessions
 providedtxt=provided-MT-accessions.txt
 if [ -f $providedtxt ]; then
@@ -68,16 +106,18 @@ if [ -f $providedtxt ]; then
       samtools faidx $fa
       ls -al $fa
       head -n 2 $fa
-      sleep 2
+      sleep $sleep_interval_sec
     fi
-    grep -HP "\d" $fa.fai | awk '{ print 1"\t"$0 }' \
-    | report_tsv
+    grep -HP "\d" $fa.fai | awk '{ print 1"\t"$0 }' | report_tsv
   done
   # !important! `report_tsv` writes to selected.mitochondria.tsv,
   # so we need to mv this file (and re-touch if for later appending)
   mv selected.mitochondria.tsv provided.mitochondria.tsv
   rm -f $providedtxt
 fi
+
+
+
 
 # loop over all the accessions and (try to) obtain corresponding mitochondria
 find WGS -name "GC*.*.xml" | while read -r fname; do
@@ -92,11 +132,21 @@ find WGS -name "GC*.*.xml" | while read -r fname; do
   do
     fa=NUCCORE/$accession.mito.$recId.fa
     if [ ! -f $fa ]; then
-      curl -s $efetch?db=nuccore\&id=$recId\&rettype=fasta > $fa
+      #curl -s $efetch?db=nuccore\&id=$recId\&rettype=fasta > $fa
+      #samtools faidx $fa
+      #ls -al $fa
+      #head -n 2 $fa
+      #sleep $sleep_interval_sec
+      for retry in 1 2 3 4; do
+        curl -s $efetch?db=nuccore\&id=$recId\&rettype=fasta > $fa
+        status=$(qc_fasta_download $retry $fa)
+        if [ $status -eq 1 ]; then
+          break
+        fi
+      done
       samtools faidx $fa
       ls -al $fa
       head -n 2 $fa
-      sleep 2
     fi
   done
   # delete entries with >1 accession

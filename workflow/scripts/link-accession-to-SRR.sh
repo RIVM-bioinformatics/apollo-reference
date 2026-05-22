@@ -23,15 +23,22 @@ recreate=$(echo "$@" | grep -c "\-recreate" || true)
 download=$(echo "$@" | grep -c "\-download" || true)
 cd $refdir
 
-if [ $recreate -eq 1 ]; then
-  wc -l $accession2SRR
+if [ ! -f $accession2SRR ] || [ $recreate -eq 1 ]; then
+  if [ -f $accession2SRR ]; then
+    wc -l $accession2SRR
+  fi
   printf "accession\tSRR\n" > $accession2SRR
   cat accessions.txt | while read -r accession; do
     json=WGS/$accession.assembly_data_report.jsonl
     samnId=$(cat $json | python3 -c "import sys, json; print(json.load(sys.stdin)['assemblyInfo']['biosample']['accession'])" 2>/dev/null || true)
     samnId=${samnId:-NA}
     echo "#" $accession $samnId #1>&2
-    if [ "$samnId" == "NA" ]; then continue; fi
+    if [ "$samnId" == "NA" ]; then
+      continue;
+    elif [ $(grep -wc $accession $accession2SRR) -ge 1 ]; then
+      # already linked in accession2SRR in earlier effort
+      continue;
+    fi
     curl -s $esearch?db=sra\&term="$samnId"+AND+ILLUMINA%5BPLATFORM%5D+AND+PAIRED%5BLAYOUT%5D\&rettype=runinfo\&retmode=text \
       | grep -Po "<Id>\d+</Id>" | tee /dev/stderr | grep -Po "\d+" | head -n 1 \
       | xargs -i curl -s $efetch?db=sra\&id={}\&rettype=runinfo \
@@ -49,9 +56,10 @@ cat accessions.txt | while read -r accession; do
   if [ -z "$srrId" ]; then
     continue
   elif [ -f SRR/$srrId"_1.fastq.gz" ]; then
+    echo "# already downloaded $srrId"
     continue
   elif [ $download -eq 0 ]; then
-    echo "skipping download of SRR/"$srrId"_1/2.fastq.gz; use $(basename $0) --download to enable"
+    echo "# skipping download of SRR/"$srrId"_1/2.fastq.gz; use $(basename $0) --download to enable"
     continue
   else
     echo "# start downloading $srrId"
@@ -67,6 +75,6 @@ cat accessions.txt | while read -r accession; do
 done
 
 # log all files downloaded so far
-ls -altr SRR/*.fastq.gz | cat -n | tail
-echo "# EOF=1 [$(basename $0)]"
+find SRR -maxdepth 1 -name "*.fastq.gz" | xargs -i ls -al {} | cat -n | tail
+echo "# EOF=1 [$(basename $0) $@]"
 exit 0

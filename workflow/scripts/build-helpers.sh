@@ -14,7 +14,7 @@ esearch=$eutils/esearch.fcgi
 # remnands of manually installing executables within this repo
 #fasterqdump=$(dirname $(readlink -f $0))/../../utils/fasterq-dump
 #datasets=$(dirname $(readlink -f $0))/../../utils/datasets
-fasterqdump=fasterqdump
+fasterqdump=fasterq-dump
 datasets=datasets
 samtools=samtools
 minimap2=minimap2
