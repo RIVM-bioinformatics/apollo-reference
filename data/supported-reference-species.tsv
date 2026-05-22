@@ -1,27 +1,27 @@
 category	literature	ignore	Species Name	Clade	Current name (Kidd et al. 2023)	Strain name	Datasource	Reference accession	Mitochondrion accession	cladegroup	is_primary	ploidy
-Top 6 EU	Arendrup et al. 2023		Candida albicans			SC5314	NCBI	GCA_000182965.3				diploid
-Top 6 EU	Arendrup et al. 2023		Candida glabrata 		nakaseomyces glabrata	ATCC2001	NCBI	GCA_010111755.1				haploid
-Top 6 EU	Arendrup et al. 2023		Candida parapsilosis			CDC317	NCBI	GCA_000182765.2				diploid
-Top 6 EU	Arendrup et al. 2023		Candida tropicalis			MYA-3404	NCBI	GCA_000006335.3				diploid
+Top 6 EU	Arendrup et al. 2023		Candida albicans			SC5314	NCBI	GCA_000182965.3	NC_002653.1			diploid
+Top 6 EU	Arendrup et al. 2023		Candida glabrata 		nakaseomyces glabrata	ATCC2001	NCBI	GCA_010111755.1	CP130941.1			haploid
+Top 6 EU	Arendrup et al. 2023		Candida parapsilosis			CDC317	NCBI	GCA_000182765.2	CP137564.1			diploid
+Top 6 EU	Arendrup et al. 2023		Candida tropicalis			MYA-3404	NCBI	GCA_000006335.3	NC_022160.1			diploid
 Top 6 EU	Arendrup et al. 2023		Candida dubliniensis			CD36	NCBI	GCA_000026945.1				diploid
-Top 6 EU	Arendrup et al. 2023		Candida krusei 		Pichia kudriavzevii	CBS573	NCBI	GCA_003054445.1				diploid
-other EU			Candida lusitaniae 		clavispora lusitaniae	FDAARGOS_655	NCBI	GCA_014636115.1				
-other EU			Candida haemulonii			B11899 	NCBI	GCA_002926055.1				
-other EU			Candida rugosa		diutina rugosa	CBS613	NCBI	GCF_008704595.1				
-other EU			Candida kefyr 		kluyveromyces marxianus	DMKU3-1042	NCBI	GCA_001417885.1				
-other EU			Candida digboiensis 			CBS9800	NCBI	GCA_030570855.1				
-other EU			Candida inconspicua			CBS180	NCBI	GCA_004931855.1				
-other EU			Candida pelliculosa		Wickerhamomyces anomalus	NRRL Y-366-8	NCBI	GCA_001661255.1				
-other EU			Candida guillermondii 		Meyerozyma guilliermondii	ATCC6260	NCBI	GCA_000149425.1				
-other EU			Candida auris	Clade I		B8441	NCBI	GCA_002759435.3	CP132762.1	cauris	1	haploid
-other EU			Candida auris	Clade I	Clade I alternative ref	B11205	NCBI	GCA_016772135.1	CP132762.1	cauris	0	haploid
-other EU			Candida auris	Clade II		B11220 	NCBI	GCA_003013715.2	CP145594.1	cauris	0	haploid
-other EU			Candida auris	Clade III		B11221	NCBI	GCA_031357565.2		cauris	0	haploid
-other EU			Candida auris	Clade IV		B11243	NCBI	GCA_003014415.1		cauris	0	haploid
-other EU			Candida auris	Clade V		IFRC2087	NCBI	GCA_016809505.1		cauris	0	haploid
-other EU			Candida orthopsilosis			Co 90-125	NCBI	GCA_000315875.1				diploid
-other EU			Candida bracarensis 		nakaseomyces bracarensis	NRRL Y-48270	NCBI	GCA_030569875.1				
-		1	Candida sofiia				NCBI	GCA_5645645765				
+Top 6 EU	Arendrup et al. 2023		Candida krusei 		Pichia kudriavzevii	CBS573	NCBI	GCA_003054445.1	CP028778.1			diploid
+other EU	Arendrup et al. 2023		Candida lusitaniae 		clavispora lusitaniae	FDAARGOS_655	NCBI	GCA_014636115.1	NC_022161.1 			
+other EU	Arendrup et al. 2023		Candida haemulonii		Candidozyma haemuli 	B11899 	NCBI	GCA_002926055.1	NW_021316577.1			haploid
+other EU	Arendrup et al. 2023		Candida rugosa		diutina rugosa	CBS613	NCBI	GCF_008704595.1				
+other EU	Arendrup et al. 2023		Candida kefyr 		kluyveromyces marxianus	DMKU3-1042	NCBI	GCA_001417885.1				
+other EU	Arendrup et al. 2023		Candida digboiensis 			CBS9800	NCBI	GCA_030570855.1				
+other EU	Arendrup et al. 2023		Candida inconspicua			CBS180	NCBI	GCA_004931855.1				
+other EU	Arendrup et al. 2023		Candida pelliculosa		Wickerhamomyces anomalus	NRRL Y-366-8	NCBI	GCA_001661255.1				
+other EU	Arendrup et al. 2023		Candida guillermondii 		Meyerozyma guilliermondii	ATCC6260	NCBI	GCA_000149425.1				haploid
+other EU	Arendrup et al. 2023		Candida auris	Clade I	Candidozyma auris	B8441	NCBI	GCA_002759435.3	CP132762.1	cauris	1	haploid
+other EU	Arendrup et al. 2023		Candida auris	Clade I	Clade I alternative ref	B11205	NCBI	GCA_016772135.1	CP132762.1	cauris	0	haploid
+other EU	Arendrup et al. 2023		Candida auris	Clade II	Candidozyma auris	B11220 	NCBI	GCA_003013715.2	CP145594.1	cauris	0	haploid
+other EU	Arendrup et al. 2023		Candida auris	Clade III	Candidozyma auris	B11221	NCBI	GCA_031357565.2	CP132754.1	cauris	0	haploid
+other EU	Arendrup et al. 2023		Candida auris	Clade IV	Candidozyma auris	B11243	NCBI	GCA_003014415.1		cauris	0	haploid
+other EU	Arendrup et al. 2023		Candida auris	Clade V	Candidozyma auris	IFRC2087	NCBI	GCA_016809505.1		cauris	0	haploid
+other EU	Arendrup et al. 2023		Candida auris	Clade VI	Candidozyma auris	F3485	NCBI	GCA_032715285.1		cauris	0	haploid
+other EU	Arendrup et al. 2023		Candida orthopsilosis			Co 90-125	NCBI	GCA_000315875.1				diploid
+other EU	Arendrup et al. 2023		Candida bracarensis 		nakaseomyces bracarensis	NRRL Y-48270	NCBI	GCA_030569875.1				
 clinical species	Stavrou et al. 2019		Candida famata 		Debaryomyces hansenii	CBS767	NCBI	GCA_000006445.2				
 clinical species	Stavrou et al. 2019	1	Meyerozyma caribbica			MG20W	NCBI	GCA_000755205.1				
 clinical species	Stavrou et al. 2019	1	Cyberlindnera jadinii			NRRL Y-1542	NCBI	GCA_001661405.1				
@@ -30,34 +30,32 @@ clinical species	Stavrou et al. 2019		Candida norvegensis		pichia norvegensis 	N
 clinical species	Stavrou et al. 2019	1	Candida intermedia			CBS 141442	NCBI	GCA_900106115.1				
 clinical species	Stavrou et al. 2019		Wickerhamiella pararugosa			PX1910	NCBI	GCA_023628975.1				
 clinical species	Stavrou et al. 2019		Candida lipolytica		Yarrowia lipolytica 	DSM 3286	NCBI	GCA_014490615.1				
-clinical species	Stavrou et al. 2019	1	Candida duobushaemulonii 			B09383		?				haploid
-clinical species	Stavrou et al. 2019	1	Candida pseudohaemulonii			B12108 		?				haploid
+clinical species	Stavrou et al. 2019		Candida duobushaemulonii 		Candidozyma pseudohaemuli	B09383	NCBI	GCA_002926085.1				haploid
+clinical species	Stavrou et al. 2019		Candida pseudohaemulonii		Candidozyma duobushaemuli	B12108 	NCBI	GCA_003013735.1	NW_021706825.1			haploid
 clinical species	Kidd et al. 2023		Candida catenulata		Diutina catenulata	NRRL Y-1508	NCBI	GCA_030560525.1				
 clinical species	Kidd et al. 2023		Candida colliculosa		Torulaspora delbrueckii	CBS 1146	NCBI	GCA_000243375.1				
 clinical species	Kidd et al. 2023		Candida pseudorugosa		Diutina pseudorugosa	CBS 10433	NCBI	GCA_030580175.1				
 clinical species	Kidd et al. 2023		Candida neorugosa 		Diutina neorugosa	CBS 1262	NCBI	GCA_030578555.1				
 clinical species	Kidd et al. 2023		Candida fabianii		Cyberlindnera fabianii	Missouri 	NCBI	GCA_022641835.1				
-clinical species	Kidd et al. 2023	1	Candida pararugosa		diutina pararugosa	n/a	NCBI	n/a				
-haemulonii complex	De Jong et al. 2024		Candida auris	Clade I		AR0387	NCBI	GCA_053008035.1	CP132762.1	cauris	0	haploid
-haemulonii complex	De Jong et al. 2024		Candida auris	Clade II		CBS10913	NCBI	GCA_054883665.1	CP145594.1	cauris	0	haploid
-haemulonii complex	De Jong et al. 2024		Candida auris	Clade III		AR0383	NCBI	GCA_053008025.1	CP132754.1	cauris	0	haploid
-haemulonii complex	De Jong et al. 2024		Candida auris	Clade IV		AR0385	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida auris	Clade V		AR1097	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024	1	Candida auris	Clade VI		?	RIVM	?				haploid
-haemulonii complex	De Jong et al. 2024		Candida haemulonii			CBS5149	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida pseudohaemulonii			CBS10004	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida duobushaemulonii			AR0391	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida khanbhai			CBS 16213	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida ruelliae			CBS 10815	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida metrosideri			CBS 16091	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida ohialehuae			CBS 16092	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida heveicola			CBS 10701	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida konsanensis			CBS12666	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida chanthaburiensis 			CBS10926	RIVM	eigen data 				haploid
-haemulonii complex	De Jong et al. 2024		Candida vulturna 			CBS14366	NCBI	GCA_044344055.1	CP116365.1			haploid
+haemulonii complex	De Jong et al. 2024		Candida auris	Clade I	Candidozyma auris	AR0387	NCBI	GCA_053008035.1	CP132762.1	cauris	0	haploid
+haemulonii complex	De Jong et al. 2024		Candida auris	Clade II	Candidozyma auris	CBS10913	NCBI	GCA_054883665.1	CP145594.1	cauris	0	haploid
+haemulonii complex	De Jong et al. 2024		Candida auris	Clade III	Candidozyma auris	AR0383	NCBI	GCA_053008025.1	CP132754.1	cauris	0	haploid
+haemulonii complex	De Jong et al. 2024		Candida auris	Clade IV	Candidozyma auris	AR0385	RIVM	eigen data 				haploid
+haemulonii complex	De Jong et al. 2024		Candida auris	Clade V	Candidozyma auris	AR1097	RIVM	eigen data 				haploid
+haemulonii complex	De Jong et al. 2024	1	Candida haemulonii		Candidozyma haemuli 	CBS5149	RIVM	eigen data 				haploid
+haemulonii complex	De Jong et al. 2024	1	Candida pseudohaemulonii		Candidozyma pseudohaemuli	CBS10004	RIVM	eigen data 				haploid
+haemulonii complex	De Jong et al. 2024	1	Candida duobushaemulonii		Candidozyma duobushaemuli	AR0391	RIVM	eigen data 				haploid
+haemulonii complex	De Jong et al. 2024	1	Candida khanbhai		Candidozyma khanbhai	CBS 16213	RIVM	eigen data 				haploid
+haemulonii complex	De Jong et al. 2024		Candida vulturna 		Candidozyma vulturna	CBS14366	NCBI	GCA_044344055.1	CP116365.1			haploid
+Outbreak EU	CWZ		Magnusiomyces capitatus      				NCBI	GCA_900497725.1	NC_024095.1			diploid
+Outbreak EU	CWZ		Magnusiomyces clavatus        				NCBI	GCA_051013725.1	CM117188.1			diploid
+Outbreak EU	CWZ		Trichosporon asahii                 				NCBI	GCA_000293215.1	CP116791.1			haploid/diploid
+Outbreak EU	CWZ		Malassezia pachydermatis     				NCBI	GCA_001278385.1	KY911092.1			haploid
+Outbreak EU	CWZ		Saccharomyces boulardii        				NCBI	GCA_000146045.2				haploid/diploid
+Outbreak EU	CWZ		Candida viswanathii                				NCBI	GCA_030566835.1				diploid
+Outbreak EU	CWZ		Rhodotorula mucilaginosa      				NCBI	GCA_034406715.1				haploid
 Other relevant pathogens			Trichophyton indotinea				NCBI	GCA_023065905.1				haploid
-Other relevant pathogens		1	Aspergillus fumigatus				RIVM	Check Wageningen - eerder besproken 				haploid
-Other relevant pathogens		1	Aspergillus tubingensis 				RIVM	check met Maarten Punt 				haploid
-Other relevant pathogens			Aspergillus flavus 				NCBI	GCF_009017415.1				haploid
-vraag CWZ om lastige soorten 		1										
-												
+Other relevant pathogens			Aspergillus fumigatus			Af293	RIVM	GCA_000002655.1	 JQ346808.1			haploid
+Other relevant pathogens			Aspergillus niger			ASM285	NCBI	GCA_000002855.2	NC_007445.1			haploid
+Other relevant pathogens			Aspergillus tubingensis 			WU-2223L	NCBI	GCA_013340325.1	NC_007597.1			haploid
+Other relevant pathogens			Aspergillus flavus 			NRRL 3357	NCBI	GCA_009017415.1	NC_026920.1			haploid
