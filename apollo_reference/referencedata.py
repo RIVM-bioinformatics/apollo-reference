@@ -31,7 +31,7 @@ class ProvidedSchema(pa.DataFrameModel):
     reference: Series[str] = pa.Field(regex=accession_regex)
     mitochondrion: Series[str] = pa.Field(regex=accession_regex_MT,nullable=True)
     datasource: Series[str] = pa.Field(isin=["NCBI", "RIVM"])
-    ploidy: Series[str] = pa.Field(isin=["haploid", "diploid"],nullable=True)
+    ploidy: Series[str] = pa.Field(isin=["haploid", "diploid","haploid/diploid"],nullable=True)
     cladegroup: Series[str] = pa.Field(nullable=True)
     is_primary: Optional[Series["Int64"]] = pa.Field(isin=[0,1], nullable=True, coerce=True)
     ignore: Optional[Series["Int64"]] = pa.Field(isin=[0,1], nullable=True, coerce=True)
