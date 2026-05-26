@@ -25,14 +25,17 @@ include-package-data = true
 packages = [
     "apollo_reference",
     "apollo_reference.config",
+    "apollo_reference.data",
 ]
 
 [tool.setuptools.package-dir]
 "apollo_reference" = "apollo_reference"
 "apollo_reference.config" = "config"
+"apollo_reference.data" = "data"
 
 [tool.setuptools.package-data]
 "apollo_reference.config" = ["*.yaml"]
+"apollo_reference.data" = ["*.xlsx","*.tsv"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
