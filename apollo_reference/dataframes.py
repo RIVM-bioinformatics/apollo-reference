@@ -43,7 +43,7 @@ def read_reference_species_df(fname:str=SPECIES_REFERENCE_TSV,schema:pa.DataFram
     df = pd.read_csv(fname, sep="\t")
     # strip all exterior whitespace from text
     # !important! panda version >= 2.1.0 renamed to map
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
     df = df[df["ignore"].ne(1)]
     df['is_primary'] = df['is_primary'].map({1.0: True, 0.0: False}).astype('boolean')
     pa_column_names = list(schema.to_schema().columns.keys())
