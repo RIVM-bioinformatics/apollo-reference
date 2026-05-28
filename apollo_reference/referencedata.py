@@ -2,11 +2,9 @@
 
 import os
 import hashlib
-from subprocess import Popen, PIPE
 from typing import Optional
 import pandas as pd
-# import pandera.pandas as pa was syntax in older versions!
-import pandera as pa
+import pandera.pandas as pa
 from pandera.typing import Series
 from pathlib import Path
 from typing import NewType, Dict, Any, Union
