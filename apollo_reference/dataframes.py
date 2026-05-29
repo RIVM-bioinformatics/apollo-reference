@@ -14,7 +14,7 @@ except ModuleNotFoundError:
 
 if TYPE_CHECKING:
     # doesn't happen during runtime
-    import pandera as pa
+    import pandera.pandas as pa
 
 # (global) variables)
 ospdn = os.path.dirname
