@@ -18,8 +18,10 @@ import argparse
 # Package Imports
 try:
     from dataframes import read_reference_species_and_assembly_df
+    from configuration import REFERENCEDATA_YAML as CONFIGFILE
 except ModuleNotFoundError:
     from .dataframes import read_reference_species_and_assembly_df
+    from .configuration import REFERENCEDATA_YAML as CONFIGFILE
 
 # External package Imports (generic argparse helpers)
 from rivm_idsbioinfo_argparse_utils.actions import DynamicHelpTopicAction
@@ -28,7 +30,6 @@ from rivm_idsbioinfo_argparse_utils.formats.fasta import validate_fasta_file
 
 # read from config where the downloaded sequence data + mmidx indices should reside
 REPODIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIGFILE = os.path.join(REPODIR,"config","referencedata.yaml")
 REFERENCE_DATA_DIR = yaml.safe_load(open(CONFIGFILE))['reference_data_dir']
 
 # output file suffixes for the *references.yml YAML file
@@ -125,7 +126,7 @@ def get_parser() -> argparse.ArgumentParser:
 
     class DynamicHelpUsageAction(DynamicHelpTopicAction):
         def generate_content(self) -> str:
-            help_text = open(os.path.join(REPODIR, "README-match-ref.txt")).read()
+            help_text = open(os.path.join(REPODIR, "docs", "README-match-ref.txt")).read()
             return "\n%s\n" % (help_text % {'prog':parser.prog})
 
     parser.add_argument("--help-usage",
