@@ -20,6 +20,9 @@ dynamic = [
     "version"
 ]
 
+[project.scripts]
+apollo-match-reference = "apollo_reference.matchreference:main"
+
 [tool.setuptools]
 include-package-data = true
 packages = [
@@ -39,3 +42,4 @@ packages = [
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+version = {attr = "apollo_reference.__version__"}
