@@ -19,7 +19,7 @@ set -eu
 datasetUID=$(generate_reference_accession_dataset_UID $input_tsv)
 mmidx=$refdir/mmidx/apollo-species-refs.$datasetUID.mmidx
 
-if [ -f $mmidx ]; then
+if [ 1 -eq 0 ] && [ -f $mmidx ]; then
   echo "# expected minimap2 index [$datasetUID] already exists!"
 else
   echo "# create minimap2 index from concatenated reference fasta files ..."
@@ -28,11 +28,17 @@ else
   mmidx_tmp_fasta=/tmp/concatenated.$datasetUID.fasta
   rm -f $mmidx_tmp_fasta
   touch $mmidx_tmp_fasta
+  # 1. Add all the genome sequences themselves
+  #    Since all coming from NCBI/WGS, accession **should** be unique
   for ((i=0; i<${#reference_array[@]}; i+=5)); do
     read -r WGS_accession MT_accession MT_assembly MT_source ref_fasta <<< "${reference_array[@]:i:5}"
-    #echo $WGS_accession $MT_accession $MT_assembly $MT_source $ref_fasta ...
     wgs_fasta=$(find $refdir/WGS -name "$WGS_accession*_genomic.fna")
     cat $wgs_fasta >> $mmidx_tmp_fasta
+  done
+  # 2. Add custom mitochondria
+  for ((i=0; i<${#reference_array[@]}; i+=5)); do
+    read -r WGS_accession MT_accession MT_assembly MT_source ref_fasta <<< "${reference_array[@]:i:5}"
+    wgs_fasta=$(find $refdir/WGS -name "$WGS_accession*_genomic.fna")
     if [ "$MT_source" == "included" ]; then
       skip=1
     elif [ "$MT_assembly" != "NA" ]; then
@@ -51,6 +57,17 @@ else
   minimap2 -d $mmidx $mmidx_tmp_fasta
   # build an accession,length TSV alike a *.fasta.fal (or the -g file used in bedtools)
   minimap2 -a $mmidx 2>/dev/null | grep "^@SQ" | cut -f2,3 | sed 's/SN://g; s/LN://g' > $mmidx.fal
+
+  # QC: all accessions in mmidx should be unique;
+  # - prevents downstream htslib errors [W::sam_hdr_create], [E::sam_hrecs_update_hashes]
+  # - prevents is_valid_headered_sam failing in apollo-match-reference
+  if [ $(cut -f 1 $mmidx.fal | sort | uniq -c | awk '{ if ($1!=1) { print $0 } }' | tee /dev/stderr | wc -l) -ge 1 ]; then
+    echo "error: duplicated (likely mitochondrion ...) accessions in mmidx [$mmidx]" 1>&2
+    rm -f $mmidx_tmp_fasta 
+    rm -f $mmidx
+    rm -f $mmidx.fal
+    exit 1
+  fi
   rm -f $mmidx_tmp_fasta
 fi
 
