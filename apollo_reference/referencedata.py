@@ -128,7 +128,7 @@ def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None,defau
         df = read_reference_assembly_df(dfpath)
     elif type(df) == type(None):
         # Fallback to (nearly requiredly present...) dataframe impossible since file is not there
-        msg = "No assembly dataframe provided; thus can't check exact files being present"
+        msg = "No assembly dataframe provided; thus can't validate exact files being present"
         raise ValueError(msg)
 
     # check if a correct dataframe format was provided
@@ -148,32 +148,80 @@ def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None,defau
     return Path(dbpath)
 
 
-def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df:pd.DataFrame=None) -> bool:
+def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df:pd.DataFrame=None,default_df_name:str="supported-reference-species.tsv") -> bool:
     """ validate that files needed in the pipeline for multiclade-analyses indicated in the dataframe, exist """
     dbpath = str(dbpath)
+
+    fullpath_default_df_name = os.path.join(dbpath,default_df_name)
+    if type(df) == type(None) and os.path.isfile(fullpath_default_df_name):
+        # Dataframe is expected (vanilla) to be IN the directory;
+        # !important! delayed import prevents circular import
+        from .dataframes import read_reference_species_df
+        df = read_reference_species_df(fullpath_default_df_name)
+    elif type(df) == type(None):
+        # Fallback to (nearly requiredly present...) dataframe impossible since file is not there
+        print(fullpath_default_df_name)
+        msg = "No assembly dataframe provided; thus can't validate is multiclade masking files being present"
+        raise ValueError(msg)
+
+    # check if a correct dataframe format was provided
+    # TODO: change DerivedSchema and the TSV to include 'is_primary' and 'cladegroup'
+    #validate_df_using_pa(df,DerivedSchema)
+    validate_df_using_pa(df,ProvidedSchema)
+
+    # TODO: need to get stated somewhere in config, not hardcoded. Now:
+    #       - apollo-mapping having to know this exact filename too
+    #       - bash script that generates this file has to know filename too
+    blacklist_filenames = [
+        os.path.join(dbpath,"multiclade","cauris-GCA_002759435.3-vs-WGA-blacklist.bed"),
+        os.path.join(dbpath, "multiclade", "cauris-GCA_002759435.3-vs-fastq-blacklist.bed"),
+        os.path.join(dbpath, "multiclade", "cauris-GCA_002759435.3-blacklist.bed"),
+        ]
+    for fname in blacklist_filenames:
+        if not os.path.isfile(fname):
+            raise FileNotFoundError(fname)
+
+    # Okay(ish) for now. In the future it will be better to fully control
+    # the existance of all of the components that make up the blacklist files.from
+    return True
+
+    # --------------------------------------------------------------------------------------------------- #
+    # Since there is at this moment:
+    # - only 1 multiclade species supported (C.auris)
+    # - and the "multiclade" concept is decided to be an expert feature
+    # - and the generation of these blacklist files is not 100% automated,
+    # - since it was decided thyis was "out-of-scope" of this batch of work on apollo-mapping,
+    # For now these blacklists are stated in the repository itself.
+    # Users have to, when wanting to use this, copy the files to the designated location
+    # (in their local multispecies-database), and from their on have a fully functional database.
+    # --------------------------------------------------------------------------------------------------- #
+    # For how the eventual validation could look like, below code snippets are fairly representative
+    # Check if all the required files for a succesful multiclade-SNP-analyses are present
+    # TODO: code below needs to get refactored to the following logics:
+    #       - there are pairwise comparison files of SRR vs central reference (assembly)
+    #       - there are pairwise comparison files of assembly vs central reference (assembly)
+    #       - there are "merged" files per accession/assembly/SRR combination
+    #       momentarily it only checks a subset, and only sticks to strict "GCA" accession file naming
 
     # Suffixes of files required to be present.
     # Example: multiclade/GCA_003013715.2__vs__GCA_002759435.3-sofclippedregions.bed
     # TODO: DRY define these in a yaml config;
     #       This allows the filename to be written to correspond to the filename to be validated here
+    # TODO: Eventually it's best practice to truely validate all these files (being present) individually;
+    #       For now, this will be simplified to only checking if the overall BED blacklist is there
     required_suffixes = [
         'sofclippedregions.bed',
         'segmental-deletions.bed',      # TODO: of at least size Xnt; where to decide and/or filter on this?
         'segmental-insertions.bed',     # TODO: of at least size Xnt; where to decide and/or filter on this?
         'segmental-duplications.bed',   # TODO: of at least size Xnt; where to decide and/or filter on this?
-        'hypervariable.bed'
+        #'hypervariable.bed'
         'noncovered.bed'
     ]
 
-    # check if a correct dataframe format was provided
-    # TODO: change DerivedSchema and the TSV to include 'is_primary' and 'cladegroup'
-    validate_df_using_pa(df,DerivedSchema)
-
-    # check if all the required files for a succesful multiclade-SNP-analyses are present
     fdf = df[df.is_primary.notnull()]
     for idx,row in fdf[fdf.is_primary == 0].iterrows():
         _, primary = next(fdf[((fdf.cladegroup==row['cladegroup']) & (fdf.is_primary==1))].iterrows())
-        central_accession = row['reference']
+        central_accession = primary['reference']
         for suffix in required_suffixes:
             clade_accession = row['reference']
             fname = os.path.join(dbpath, 'multiclade', f"{clade_accession}__vs__{central_accession}-{suffix}")
