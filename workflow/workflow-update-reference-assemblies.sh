@@ -133,9 +133,10 @@ parse_args "$@"
 # mind duplicated variable name in build-helpers.sh
 refdata_tsv=$outdir/reference_assembly_data.tsv
 
-echo "# xlsx        : $xlsx"
-echo "# (input_)tsv : $tsv"
-echo "# refdata_tsv : $refdata_tsv"
+echo "# xlsx          : $xlsx"
+echo "# (input_)tsv   : $tsv"
+echo "# refdata_tsv   : $refdata_tsv"
+echo "# download_fastq: $download_fastq"
 
 # create output subdirectories
 mkdir -p $outdir/WGS

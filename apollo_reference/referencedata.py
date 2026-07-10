@@ -109,10 +109,10 @@ def get_species_index_hash_from_df(df:pd.DataFrame) -> str:
     accessions = ",".join([ "%s,%s" % t for t in accessions ]).replace("nan,","")
     return hashlib.md5(accessions.encode()).hexdigest()
 
-def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None) -> bool:
-    """ validate that the provided reference database dir has the blueprint of it """
+def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None,default_df_name:str="reference_assembly_data.tsv") -> Path:
+    """ validate that the dataframe matches the provided reference database dir, and that this dir has the proper blueprint """
     dbpath = str(dbpath)
-    # SRR is an optional sub-directory!
+    # Check all required subdirectories; SRR is an optional sub-directory!
     for subdir in ('','WGS','refs','mmidx','NUCCORE',):
         dirpath = os.path.join(dbpath,subdir)
         if not os.path.isdir(dirpath):
@@ -120,14 +120,17 @@ def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None) -> b
         elif subdir != '' and len(os.listdir(dirpath)) == 0:
             raise FileNotFoundError("no files found in %s" % dirpath)
 
-    if type(df) == type(None):
-        # no assembly dataframe provided; thus can't check exact files being present
-        return True
+    if type(df) == type(None) and os.path.isfile(os.path.join(dbpath,default_df_name)):
+        # Dataframe is expected (vanilla) to be IN the directory
+        df = pd.read_csv(os.path.join(dbpath,default_df_name), sep='\t')
+    elif type(df) == type(None):
+        msg = "No assembly dataframe provided; thus can't check exact files being present"
+        raise ValueError(msg)
 
-    # check if the correct dataframe format was provided
+    # check if a correct dataframe format was provided
     validate_df_using_pa(df,DerivedSchema)
 
-    # validate that all 'fasta' constructed references are at their designated spot
+    # validate that all 'fasta' constructed references are at their designated location (in /refs)
     for fasta in df.fasta.tolist():
         absfasta = os.path.join(dbpath,'refs',fasta)
         if not os.path.isfile(absfasta):
@@ -138,6 +141,40 @@ def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None) -> b
     mmidx = os.path.join(dbpath, 'mmidx', mmidx)
     if not os.path.isfile(mmidx):
         raise FileNotFoundError(mmidx)
+    return Path(dbpath)
+
+
+def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df:pd.DataFrame=None) -> bool:
+    """ validate that files needed in the pipeline for multiclade-analyses indicated in the dataframe, exist """
+    dbpath = str(dbpath)
+
+    # Suffixes of files required to be present.
+    # Example: multiclade/GCA_003013715.2__vs__GCA_002759435.3-sofclippedregions.bed
+    # TODO: DRY define these in a yaml config;
+    #       This allows the filename to be written to correspond to the filename to be validated here
+    required_suffixes = [
+        'sofclippedregions.bed',
+        'segmental-deletions.bed',      # TODO: of at least size Xnt; where to decide and/or filter on this?
+        'segmental-insertions.bed',     # TODO: of at least size Xnt; where to decide and/or filter on this?
+        'segmental-duplications.bed',   # TODO: of at least size Xnt; where to decide and/or filter on this?
+        'hypervariable.bed'
+        'noncovered.bed'
+    ]
+
+    # check if a correct dataframe format was provided
+    # TODO: change DerivedSchema and the TSV to include 'is_primary' and 'cladegroup'
+    validate_df_using_pa(df,DerivedSchema)
+
+    # check if all the required files for a succesful multiclade-SNP-analyses are present
+    fdf = df[df.is_primary.notnull()]
+    for idx,row in fdf[fdf.is_primary == 0].iterrows():
+        _, primary = next(fdf[((fdf.cladegroup==row['cladegroup']) & (fdf.is_primary==1))].iterrows())
+        central_accession = row['reference']
+        for suffix in required_suffixes:
+            clade_accession = row['reference']
+            fname = os.path.join(dbpath, 'multiclade', f"{clade_accession}__vs__{central_accession}-{suffix}")
+            if not os.path.isfile(fname):
+                raise FileNotFoundError(fname)
     return True
 
 def get_identify_species_mmidx_relpath(df:pd.DataFrame=None) -> str:

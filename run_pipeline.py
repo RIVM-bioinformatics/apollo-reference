@@ -37,7 +37,7 @@ def main() -> None:
     md = Markdown(open(MARKDOWN_FILE).read())
     console.print(md)
     import sys
-    sys.exit()
+    sys.exit(0)
     # "normal" activation of the pipeline
     apollo_reference.run()
 
