@@ -121,9 +121,13 @@ def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None,defau
             raise FileNotFoundError("no files found in %s" % dirpath)
 
     if type(df) == type(None) and os.path.isfile(os.path.join(dbpath,default_df_name)):
-        # Dataframe is expected (vanilla) to be IN the directory
-        df = pd.read_csv(os.path.join(dbpath,default_df_name), sep='\t')
+        # Dataframe is expected (vanilla) to be IN the directory;
+        # !important! delayed import prevents circular import
+        from .dataframes import read_reference_assembly_df
+        dfpath = os.path.join(dbpath,default_df_name)
+        df = read_reference_assembly_df(dfpath)
     elif type(df) == type(None):
+        # Fallback to (nearly requiredly present...) dataframe impossible since file is not there
         msg = "No assembly dataframe provided; thus can't check exact files being present"
         raise ValueError(msg)
 
