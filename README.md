@@ -100,7 +100,7 @@ micromamba create -n download_reference_dataset -f workflow/envs/download_refere
 env_path=$(conda info --envs | grep download_reference_dataset | awk '{ print $1 }' | tee /dev/stderr)
 conda activate $env_path
 
-## [2.3] execute the workflow that will download the multi-reference dataset ylocally
+## [2.3] execute the workflow that will download the multi-reference dataset locally
 # Please have some coffee meanwhile, since:
 # - dozens of assemblies and taxrecords
 # - hundreds of mitochondria
@@ -109,6 +109,17 @@ conda activate $env_path
 # Mind, that since it's incrementally generating (unique) species identification databases,
 # each accession change will trigger an additional ~3GB of disk space.
 # Realize disk space used will inflate once the supported reference dataset will grow considerably.
+#
+# !important! Default location for the reference data directory is:
+# - stated in config/referencedata.yaml
+# - defaulting to /mnt/db/apollo/reference
+# Updating this folder (when adding  or upgrading new references) will cause issues when not owned by you.
+# Solution for this is to mv it to another name, and generate a new empty folder name yourself:
+#   default_refdir=/mnt/db/apollo/reference
+#   earlierdate=$(ls -lt $default_refdir --time-style="+#%Y%m%d" | grep -wPo "#20\d{6}" | tr -d '#' | sort -g | tail -n 1)
+#   mv $default_refdir $default_refdir-$earlierdate
+#   mkir $default_refdir
+#
 ./workflow/workflow-update-reference-assemblies.sh --out /your/desired/output/directory
 
 ## [2.4] !!important!! for RIVM-idsbioinfo colleagues that need to update the supported reference dataset
@@ -117,8 +128,10 @@ conda activate $env_path
 # The apollo-reference repository contains a .xlsx (to stay biologist-fiendly) and generated *.tsv files connected to it.
 # Together, these represent the *state* of the multi-reference dataset.
 # Any addition/removal/changing of an accession (in .xlsx) changes the files and thereby the state.
-# So, after an supported reference dataset update, information should get commited back into the repo.
+# So, after an supported reference dataset update, information should get commited back into the repo
+# - the default reference dataset directory (see 2.3) is not allowed to get edited (ISO!)
 # - assuming there's indeed any update (check git status!)
+# - realize there might be write permission rights when updating an existing folder (see 2.3)
 # - !important! this should become a new version bumb of the repo (allowing pinned version ISO-verification)
 # - please commit the updates
 # --------------------------------------------------------------------------------------------------------------
