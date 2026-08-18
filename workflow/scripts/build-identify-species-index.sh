@@ -12,6 +12,8 @@
 set +eu
 refdir=$1 || true
 validate_refdir $refdir
+# overrule input_tsv to the provided refdir
+input_tsv=$refdir/reference_assembly_data.tsv
 validate_input_tsv $input_tsv;
 set -eu
 
@@ -28,6 +30,7 @@ else
   mmidx_tmp_fasta=/tmp/concatenated.$datasetUID.fasta
   rm -f $mmidx_tmp_fasta
   touch $mmidx_tmp_fasta
+  ls -al $mmidx_tmp_fasta
   # 1. Add all the genome sequences themselves
   #    Since all coming from NCBI/WGS, accession **should** be unique
   for ((i=0; i<${#reference_array[@]}; i+=5)); do
@@ -35,6 +38,7 @@ else
     wgs_fasta=$(find $refdir/WGS -name "$WGS_accession*_genomic.fna")
     cat $wgs_fasta >> $mmidx_tmp_fasta
   done
+  ls -al $mmidx_tmp_fasta
   # 2. Add custom mitochondria
   for ((i=0; i<${#reference_array[@]}; i+=5)); do
     read -r WGS_accession MT_accession MT_assembly MT_source ref_fasta <<< "${reference_array[@]:i:5}"

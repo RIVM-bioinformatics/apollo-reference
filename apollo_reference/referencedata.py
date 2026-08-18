@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import hashlib
 from typing import Optional
 import pandas as pd
@@ -8,6 +9,14 @@ import pandera.pandas as pa
 from pandera.typing import Series
 from pathlib import Path
 from typing import NewType, Dict, Any, Union
+from rich.console import Console
+from rich.markdown import Markdown
+
+# Package Imports
+try:
+    from configuration import ASSEMBLY_REFERENCE_TSV_BASE, SPECIES_REFERENCE_TSV_BASE
+except ModuleNotFoundError:
+    from .configuration import ASSEMBLY_REFERENCE_TSV_BASE, SPECIES_REFERENCE_TSV_BASE
 
 # Customized TypeHints
 VerifiedFile = NewType("VerifiedFile", Path)
@@ -109,7 +118,7 @@ def get_species_index_hash_from_df(df:pd.DataFrame) -> str:
     accessions = ",".join([ "%s,%s" % t for t in accessions ]).replace("nan,","")
     return hashlib.md5(accessions.encode()).hexdigest()
 
-def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None,default_df_name:str="reference_assembly_data.tsv") -> Path:
+def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None,default_df_name:str=ASSEMBLY_REFERENCE_TSV_BASE) -> Path:
     """ validate that the dataframe matches the provided reference database dir, and that this dir has the proper blueprint """
     dbpath = str(dbpath)
     # Check all required subdirectories; SRR is an optional sub-directory!
@@ -148,7 +157,7 @@ def validate_reference_dataset(dbpath:Union[Path|str],df:pd.DataFrame=None,defau
     return Path(dbpath)
 
 
-def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df:pd.DataFrame=None,default_df_name:str="supported-reference-species.tsv") -> bool:
+def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df:pd.DataFrame=None,default_df_name:str=SPECIES_REFERENCE_TSV_BASE) -> bool:
     """ validate that files needed in the pipeline for multiclade-analyses indicated in the dataframe, exist """
     dbpath = str(dbpath)
 
@@ -170,8 +179,10 @@ def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df
     validate_df_using_pa(df,ProvidedSchema)
 
     # TODO: need to get stated somewhere in config, not hardcoded. Now:
-    #       - apollo-mapping having to know this exact filename too
-    #       - bash script that generates this file has to know filename too
+    # - apollo-mapping having to know these exact filename too
+    # - bash script that generates this file has to know filename too
+    # - and files currently (and temporarily!!) reside in apollo-mapping, not *-reference ...
+    # - ... since their generation is not fully automated yet.
     blacklist_filenames = [
         os.path.join(dbpath,"multiclade","cauris-GCA_002759435.3-vs-WGA-blacklist.bed"),
         os.path.join(dbpath, "multiclade", "cauris-GCA_002759435.3-vs-fastq-blacklist.bed"),
@@ -179,6 +190,20 @@ def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df
         ]
     for fname in blacklist_filenames:
         if not os.path.isfile(fname):
+            # Required blacklist file not there.
+            # - Future solution is that this is "impossible" since apollo-reference made its own blacklist(s) automatically
+            # - Current situation is that (semi-manually) generated files for C.auris are stored in apollo-mapping/data
+            # - So, non-present file most likely means a newly downloaded and/or externally downloaded multireference-dataset ...
+            # - for which the file's aren't copied yet (see apollo-mapping/data/README.md)
+            if os.path.basename(os.getcwd()) == "apollo-mapping":
+                MARKDOWN_FILE = os.path.join(os.getcwd(),"data","README.md")
+                error_msg = f"""## This is the exception that is about to get raised:\nraise FileNotFoundError({fname})\n\n"""
+                md = Markdown(error_msg + open(MARKDOWN_FILE).read())
+                console = Console()
+                console.print(md)
+                sys.exit()
+
+            # vanilla / any other situation. Required file is missing
             raise FileNotFoundError(fname)
 
     # Okay(ish) for now. In the future it will be better to fully control

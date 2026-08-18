@@ -96,7 +96,7 @@ function convert_tsv_to_nested_reference_array() {
   # done
   local input_tsv=$1
   local -n ref_array=$2
-  outdir=$(dirname $(readlink -f $input_tsv))/refs
+  local_outdir=$(dirname $(readlink -f $input_tsv))/refs
   while IFS=":" read -r reference taxid MT_num MT_assembly MT_accession MT_length MT_source fasta;
   do
     WGS_accession=$reference
@@ -104,15 +104,15 @@ function convert_tsv_to_nested_reference_array() {
     MT_source="${MT_source:-NA}"
     MT_assembly="${MT_assembly:-NA}"
     if [ "$MT_source" == "external" ]; then
-      outfa=$outdir/$WGS_accession"__external__"$MT_accession.fa
+      outfa=$local_outdir/$WGS_accession"__external__"$MT_accession.fa
     elif [ "$MT_source" == "provided" ]; then
-      outfa=$outdir/$WGS_accession"__provided__"$MT_accession.fa
+      outfa=$local_outdir/$WGS_accession"__provided__"$MT_accession.fa
     elif [ "$MT_source" == "included" ]; then
-      outfa=$outdir/$WGS_accession"__included__"$MT_accession.fa
+      outfa=$local_outdir/$WGS_accession"__included__"$MT_accession.fa
     elif [ "$MT_source" == "NA" ]; then
-      outfa=$outdir/$WGS_accession"__nd__nd".fa
+      outfa=$local_outdir/$WGS_accession"__nd__nd".fa
     elif [ -z $MT_source ]; then
-      outfa=$outdir/$WGS_accession"__nd__nd".fa
+      outfa=$local_outdir/$WGS_accession"__nd__nd".fa
     else
       echo "error: NotImplementedError(MT_source=$MT_source)"
       exit 1

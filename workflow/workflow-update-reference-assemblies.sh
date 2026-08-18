@@ -83,6 +83,28 @@ tsv=$datadir/supported-reference-species.tsv
 colname_ref_accession="Reference accession"
 colname_MT_accession="Mitochondrion accession"
 
+
+function logf() {
+  # based on verbose, silence the output of some of the scripts
+  if [ $verbose == true ]; then
+    cat
+  else
+    tail -n 1
+  fi
+}
+
+function summarize_downloaded_files() {
+  # summarize downloaded files;
+  # use quoted argument as input e.g. "$outdir/WGS/*.fna"
+  filepattern=$1
+  ls -tr $filepattern | xargs -i ls -al --time-style=+%Y%m%d  {} \
+    | cut -f 3- -d' ' | cat -n | tail -n 5
+  # log empty files / thus erroneous
+  find $filepattern -type f -size 0 \
+    | awk '{ print "# ERROR: zero-bytes file "$1 }' 1>&2
+  }
+
+
 function convert_xlsx_to_tsv() {
   # convert the appointed xlsx into appointed tsv file
 
@@ -148,7 +170,8 @@ mkdir -p $outdir/sam
 
 # 1. convert XSLX to TSV (and pretty-show it)
 convert_xlsx_to_tsv;
-head $tsv | csvlook -t -I;
+head $tsv | csvlook -t -I --snifflimit 0
+
 # !important! need to keep the tsv in the outdir too (for build_helpers.sh input_tsv)
 cp $tsv $outdir/$(basename $tsv)
 
@@ -177,31 +200,47 @@ cd $outdir
 
 # 3. download reference genome assemblies
 cat accessions.txt | while read accession; do
-  $scriptsdir/download-GCA-accession.sh $accession $outdir/WGS;
-done
+  $scriptsdir/download-GCA-accession.sh $accession $outdir/WGS
+done | logf
+
+# 3b. list downloaded assembly files
+summarize_downloaded_files "$outdir/WGS/*.fna"
+echo "# EOF=1 [download-GCA-accession.sh]"
 
 # 4. download mitochondria (given the TaxID of the assemblies
-$scriptsdir/download-mito-accessions.sh $outdir
+$scriptsdir/download-mito-accessions.sh $outdir | grep "^#"
 
-# 5a. link accessions to SRR accessions (to generate self-test-data)
-$scriptsdir/link-accession-to-SRR.sh $outdir
+# 4b. list downloaded mitochondrion files
+summarize_downloaded_files "$outdir/NUCCORE/*.fa"
+echo "# EOF=1 [download-mito-accessions.sh]"
+
+### 5a. link accessions to SRR accessions (to generate self-test-data)
+##$scriptsdir/link-accession-to-SRR.sh $outdir
 
 # 5b. and subsequently download these SRR PE fastq datasets
-$scriptsdir/link-accession-to-SRR.sh $outdir $download_fastq_flag
+$scriptsdir/link-accession-to-SRR.sh $outdir $download_fastq_flag | logf
 
 # 6. generate "final" reference assembly data sheet
 python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir | tee /dev/stderr > $refdata_tsv
-# make sure the refdata_tsv - corresponding to the xlsx - is copied the repo itself too! 
+# make sure the refdata_tsv - corresponding to the xlsx - is copied into the repo itself too!
 cp $refdata_tsv $datadir/$(basename $refdata_tsv)
 ls -al $refdata_tsv $datadir/$(basename $refdata_tsv)
-echo "# EOF=1 [generate_reference_assembly_dataframe.py]"
 
 # 7. generate per-species reference (including mitochondrion, if applicable)
 $scriptsdir/build-species-references.sh $outdir
 
-# 8. generate (in case anu update) new identify species index
+summarize_downloaded_files "$outdir/refs/*.fa"
+echo "# EOF=1 [build-species-references.sh]"
+
+# 8. generate (in case any update) new index for species identification
+echo "# Realize there can/will be warnings like these:"
+echo "# warning: MT accession xxxxxxx.y already included in other clade/WGS"
+echo "# This means an MT accession is used twice for (multi-clade) references."
+echo "# This needs to get corrected for in the minimap index"
 $scriptsdir/build-identify-species-index.sh $outdir
 
 echo "# EOF=1 [$(basename $0)]"
 exit 0
 
+
+}

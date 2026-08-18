@@ -6,6 +6,8 @@
 set +eu
 refdir=$1 || true
 validate_refdir $refdir
+# overrule input_tsv to the provided refdir
+input_tsv=$refdir/reference_assembly_data.tsv
 validate_input_tsv $input_tsv;
 outdir=$refdir/refs
 set -eu
@@ -55,7 +57,6 @@ convert_tsv_to_nested_reference_array $input_tsv reference_array
 for ((i=0; i<${#reference_array[@]}; i+=5)); do
   read -r WGS_accession MT_accession MT_assembly MT_source ref_fasta <<< "${reference_array[@]:i:5}"
   wgs=$(find $refdir/WGS -name "$WGS_accession*_genomic.fna")
-
   if [ ! -f $ref_fasta ] || [ $recreate == true ]; then
     if [ "$MT_source" == "provided" ]; then
       # manually provided mitochondrion accession: concatenate WGS + mitochondrial fasta
@@ -97,9 +98,7 @@ done
 # make all files +r / -w for everybody
 chmod a+r $outdir/*
 chmod a-w $outdir/*
-echo "# summary of all generated reference files:"
-ls -altr $outdir/*.fa 2>/dev/null | cat -n | tail -n 5
-echo "# summary of origin of mitochondrial data:"
+echo "# summary of origin of mitochondrial data (in generated reference fasta files):"
 ls -altr $outdir/*.fa 2>/dev/null | awk -F'__' '{ print $2 }' | sort | uniq -c
 echo "# EOF=1 [$(basename $0)]"
 exit 0

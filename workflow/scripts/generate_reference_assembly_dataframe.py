@@ -25,6 +25,9 @@ def generate_dataframe(REFDATADIR:Path) -> pd.DataFrame:
     | GCA_000006445.2 | 284592 |        |                                                 |                |           |           | GCA_000006445.2__nd__nd.fa                   |
 
     """
+    sys.stderr.write("# Generating reference assembly dataframe: "+REFDATADIR+"\n")
+    sys.stderr.write("# Generating reference assembly dataframe: "+REFDATADIR+"\n")
+    sys.stderr.write("# Generating reference assembly dataframe: "+REFDATADIR+"\n")
     # read files that link reference accession to taxId and cast into dataframe
     data = []
     for xml in glob.glob(os.path.join(REFDATADIR, "WGS", "*.*.xml")):

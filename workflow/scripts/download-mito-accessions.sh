@@ -21,10 +21,10 @@ cd $refdir
 function report_tsv() {
   # DRY helper function to rewrite systematically formatted line to selected.mitochondria.tsv
   # Mind this same function is (mis)used for provided.mitochondria.tsv too;
-  # the generated file is mv'ed lateren
+  # the generated file is mv'ed lateron
   sed 's|NUCCORE/||g' \
   | sed 's/.fai:/\t/' | cut -f 1-4 | sed 's/^\(.\+\)\(.mito..\+\)$/\1\t\0/' | cut -f 2- \
-  | tee /dev/stderr >> selected.mitochondria.tsv
+  >> selected.mitochondria.tsv
 }
 
 function select_the_mitochondrion() {
@@ -117,13 +117,11 @@ if [ -f $providedtxt ]; then
 fi
 
 
-
-
 # loop over all the accessions and (try to) obtain corresponding mitochondria
 find WGS -name "GC*.*.xml" | while read -r fname; do
   taxId=$(echo $fname | grep -Po "\.\d+\.xml$" | cut -f 2 -d'.')
   accession=$(echo $fname | awk -F'/' '{ print $NF }' | sed 's/\.[0-9]\+\.xml$//')
-  echo "#" $accession $taxId
+  echo "retrieving $accession $taxId ..."
   min_nt_size=15000
   max_nt_size=100000
   # !important! realize capped at RetMax=20
@@ -132,11 +130,8 @@ find WGS -name "GC*.*.xml" | while read -r fname; do
   do
     fa=NUCCORE/$accession.mito.$recId.fa
     if [ ! -f $fa ]; then
-      #curl -s $efetch?db=nuccore\&id=$recId\&rettype=fasta > $fa
-      #samtools faidx $fa
-      #ls -al $fa
-      #head -n 2 $fa
-      #sleep $sleep_interval_sec
+      # need to get wrapped in retry loop; when download speed is to high errors like these appear:
+      # warning: {"error":"API rate limit exceeded","api-key":"2a02:a45f:47f2:1:b814:827b:4f53:1733","count":"4","limit":"3"}
       for retry in 1 2 3 4; do
         curl -s $efetch?db=nuccore\&id=$recId\&rettype=fasta > $fa
         status=$(qc_fasta_download $retry $fa)
@@ -166,8 +161,10 @@ find WGS -name "GC*.*.xml" | while read -r fname; do
   accession=$(echo $fname | awk -F'/' '{ print $NF }' | sed 's/\.[0-9]\+\.xml$//')
   assembly=$(ls WGS/$accession*.fna)
   num=$(grep "^>" $assembly | grep -cwiP "(mitochondrion|mitochondrial)" || true)
+  # this shows e.g.:
+  # >GG692418.1 Candida tropicalis MYA-3404 mitochondrial scaffold supercont3.24, whole genome shotgun sequence
+  # >CM029591.1 [Candida] nivariensis strain CBS 9983 mitochondrion, complete sequence, whole genome shotgun sequence
   grep "^>" $assembly | grep -wiP "(mitochondrion|mitochondrial)" \
-    | tee /dev/stderr \
     | cut -f 2 -d'>' | cut -f 1 -d' ' | xargs -i grep -wH "^"{} $assembly.fai \
     | sed 's/.fai:/\t/' | cut -f 1-3 | awk '{ print "'$accession'\t'$num'\t"$0 }' \
     | sed 's|\tWGS/|\t|'
@@ -176,11 +173,13 @@ done > included.mitochondria.tsv
 echo "# summary of all downloaded mitochondrial files:"
 ls -altr NUCCORE/*.mito.*.fa 2>/dev/null | cat -n | tail -n 5
 echo "# selected mitochondria files:"
-cat selected.mitochondria.tsv
+cat selected.mitochondria.tsv | awk '{ print "# "$0 }'
 echo "# provided mitochondria (files):"
-cat provided.mitochondria.tsv
+cat provided.mitochondria.tsv | awk '{ print "# "$0 }'
 echo "# included mitochondria (files):"
-cat included.mitochondria.tsv
+cat included.mitochondria.tsv | awk '{ print "# "$0 }'
+echo "# overview mitochondria (files):"
+wc -l *.mitochondria.tsv | sed '$d' | awk '{ print "# "$0 }'
 echo "# EOF=1 [$(basename $0)]"
 exit 0
 
