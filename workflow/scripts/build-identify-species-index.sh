@@ -75,6 +75,12 @@ else
   rm -f $mmidx_tmp_fasta
 fi
 
+# settle modification rights;
+# since apollo-reference will be future ISO-certified, existing (reference) files + mmidx can't be modified
+find "$refdir" -type d -exec chmod a+rwx,a+t {} +
+find "$refdir" -type f -exec chmod a+r-w {} +
+find "$refdir" -maxdepth 1 -type f -exec chmod ug+w {} +
+
 # this is the FINAL unquoted line reported by this script
 ls $mmidx*
 ls -al $mmidx* | awk '{ print "# "$0 }'

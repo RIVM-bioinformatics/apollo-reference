@@ -95,9 +95,6 @@ for ((i=0; i<${#reference_array[@]}; i+=5)); do
   fi
 done
 
-# make all files +r / -w for everybody
-chmod a+r $outdir/*
-chmod a-w $outdir/*
 echo "# summary of origin of mitochondrial data (in generated reference fasta files):"
 ls -altr $outdir/*.fa 2>/dev/null | awk -F'__' '{ print $2 }' | sort | uniq -c
 echo "# EOF=1 [$(basename $0)]"
