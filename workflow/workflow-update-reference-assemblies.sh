@@ -8,7 +8,6 @@ help_text="$(basename $0) --out [/PATH/TO/OUT/DIR] [ --download-fastq ]"
 
 # TODO: once hard-coding to Apollo_clinical_Candida_species.xlsx is released, update help_text and parse_args() 
 #help_text="$(basename $0) --tsv [/PATH/TO/XLSX2CSV/APPOINTED/references.tsv] --out [/PATH/TO/OUT/DIR]"
-#tsv=""
 
 # arguments obtained from parse_args()
 outdir=""
@@ -152,7 +151,10 @@ function convert_xlsx_to_tsv() {
 # parse arguments & start script
 parse_args "$@"
 
-# mind duplicated variable name in build-helpers.sh
+# mind duplicated variable name in build-helpers.sh;
+# realize this very same file is kept in:
+# - apollo-reference/data
+# - /PATH/TO/OUT/DIR -> $outdir
 refdata_tsv=$outdir/reference_assembly_data.tsv
 
 echo "# xlsx          : $xlsx"
@@ -221,7 +223,8 @@ echo "# EOF=1 [download-mito-accessions.sh]"
 $scriptsdir/link-accession-to-SRR.sh $outdir $download_fastq_flag | logf
 
 # 6. generate "final" reference assembly data sheet
-python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir | tee /dev/stderr > $refdata_tsv
+echo "python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir $tsv | tee /dev/stderr > $refdata_tsv"
+python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir $tsv | tee /dev/stderr > $refdata_tsv
 # make sure the refdata_tsv - corresponding to the xlsx - is copied into the repo itself too!
 cp $refdata_tsv $datadir/$(basename $refdata_tsv)
 ls -al $refdata_tsv $datadir/$(basename $refdata_tsv)

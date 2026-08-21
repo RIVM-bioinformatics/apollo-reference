@@ -68,6 +68,9 @@ There are several options here
 ```
 # here, probably you want a pyhton venv, which I assume you'll take for yourself
 git clone --depth 1 https://github.com/RIVM-bioinformatics/apollo-reference.git .
+cd apollo-reference
+git checkout towards-v0.1.3
+
 pip install --user apollo-reference
 ```
 
@@ -92,8 +95,11 @@ which is a requirement for (upcoming) ISO-validation of the [apollo-mapping](htt
 ## [2.0] install micromamba if not installed yet
 #curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | sudo tar -xvj -C /usr/local/bin --strip-components=1 bin/micromamba
 
-## [2.1] creare environment with micromamba (or with conda if you prefer)
+## [2.1a] create environment with micromamba (or with conda if you prefer)
 micromamba create -n download_reference_dataset -f workflow/envs/download_reference_dataset.yaml
+
+## [2.1b] or alteratively with conda if you prefer
+conda env create -f workflow/envs/download_reference_dataset.yaml
 
 ## [2.2] activate environment
 # works at RIVM-HPC headnode (and probably on any compute environments)

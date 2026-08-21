@@ -59,9 +59,11 @@ else
   ls -al $mmidx_tmp_fasta
   # build index and remove fasta file (index alone will suffice)
   minimap2 -d $mmidx $mmidx_tmp_fasta
-  # build an accession,length TSV alike a *.fasta.fal (or the -g file used in bedtools)
-  minimap2 -a $mmidx 2>/dev/null | grep "^@SQ" | cut -f2,3 | sed 's/SN://g; s/LN://g' > $mmidx.fal
-
+  # Build an accession,length TSV alike a *.fasta.fal (or the -g file used in bedtools);
+  # realize (over)write-protection
+  if [ ! -f $mmidx.fal ]; then
+    minimap2 -a $mmidx 2>/dev/null | grep "^@SQ" | cut -f2,3 | sed 's/SN://g; s/LN://g' > $mmidx.fal
+  fi
   # QC: all accessions in mmidx should be unique;
   # - prevents downstream htslib errors [W::sam_hdr_create], [E::sam_hrecs_update_hashes]
   # - prevents is_valid_headered_sam failing in apollo-match-reference

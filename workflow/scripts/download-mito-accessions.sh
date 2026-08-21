@@ -154,8 +154,11 @@ find WGS -name "GC*.*.xml" | while read -r fname; do
 done
 
 echo "# get information on mitochondria co-deposited in the assemblies"
-# !important! genomic *.fai files needed
-ls WGS/GC*_*.fna | xargs -i samtools faidx {}
+# !important! genomic *.fai files needed, but existing files can't get recreated
+find WGS -type f \( -name "*.fna" -o -name "*.fna.fai" \) \
+  | sed 's/.fai$//' | sort | uniq -c \
+  | grep " 1 " | awk '{ print $NF }' \
+  | xargs -i samtools faidx {}
 
 find WGS -name "GC*.*.xml" | while read -r fname; do
   accession=$(echo $fname | awk -F'/' '{ print $NF }' | sed 's/\.[0-9]\+\.xml$//')

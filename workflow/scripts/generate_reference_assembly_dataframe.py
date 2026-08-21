@@ -8,9 +8,16 @@ import glob
 import sys
 from tabulate import tabulate
 from pathlib import Path
+from typing import Union
 
-def generate_dataframe(REFDATADIR:Path) -> pd.DataFrame:
+# hard-coded tsv file name, used in workflow-update-reference-assemblies.sh
+HARDCODED_SUPPORTED_REFERENCE_SPECIES_TSV = "supported-reference-species.tsv"
+
+def generate_dataframe(REFDATADIR:Path,supportedrefstsv:Union[Path,None]=None) -> pd.DataFrame:
     """ Convert all downloaded assembly data, genomic and mitochondria, into a single, summarizing pandas dataframe
+
+    If an (existing) supportedrefstsv is provided, assemblies are delimited to occuring to this file.
+    If not, all (historical) assemblies are glob'ed from the {REFDATADIR}/WGS directory.
 
     Example how this dataframe looks like (in csvlook -t -I on the command line):
 
@@ -25,17 +32,23 @@ def generate_dataframe(REFDATADIR:Path) -> pd.DataFrame:
     | GCA_000006445.2 | 284592 |        |                                                 |                |           |           | GCA_000006445.2__nd__nd.fa                   |
 
     """
-    sys.stderr.write("# Generating reference assembly dataframe: "+REFDATADIR+"\n")
-    sys.stderr.write("# Generating reference assembly dataframe: "+REFDATADIR+"\n")
-    sys.stderr.write("# Generating reference assembly dataframe: "+REFDATADIR+"\n")
+    supported_refs_df = pd.DataFrame()
+    delimited_accessions = []
+    if supportedrefstsv != None:
+        supported_refs_df = pd.read_csv(supportedrefstsv,sep="\t")
+        delimited_accessions = supported_refs_df[supported_refs_df.ignore != 1]['Reference accession'].tolist()
+
     # read files that link reference accession to taxId and cast into dataframe
     data = []
     for xml in glob.glob(os.path.join(REFDATADIR, "WGS", "*.*.xml")):
         _parts = Path(xml).stem.split(".")
         accession = ".".join(_parts[0:-1])
+        if delimited_accessions and not delimited_accessions.__contains__(accession):
+            sys.stderr.write(f"ignoring {accession}; it's not in the provided {os.path.basename(supportedrefstsv)}\n")
+            continue
         taxId = _parts[-1]
         data.append((accession, int(taxId)))
-    colnames = ['reference', 'taxid']
+    colnames = ['reference', 'taxid']   
     df = pd.DataFrame(data, columns=colnames)
     df.sort_values(list(reversed(colnames)), inplace=True)
 
@@ -95,14 +108,20 @@ if __name__ == "__main__":
     # (global) variables
     try:
         REFDATADIR = sys.argv[1]
-        if not os.path.isdir(REFDATADIR):
+        SUPPORTEDREFSTSV = None
+        if len(sys.argv) == 3 and os.path.isfile(sys.argv[2]) and os.path.basename(sys.argv[2]) == HARDCODED_SUPPORTED_REFERENCE_SPECIES_TSV:
+            # Delimit to only those specified in xlsx -> supported-reference-species.tsv,
+            # and only convert these to reference_assembly_data.tsv.
+            # Otherwise (directory not file provided) the whole <REFDATADIR>/WGS directory is glob'ed for assemblies
+            SUPPORTEDREFSTSV = sys.argv[2]
+        elif not os.path.isdir(REFDATADIR):
             raise IOError
     except:
-        help_text = "%s [/path/to/multiref/dir]"
+        help_text = "%s /path/to/multiref/dir [ and optional /path/to/apollo-reference/data/reference_assembly_data.tsv ]"
         print(help_text % sys.argv[0])
         sys.exit()
 
-    df = generate_dataframe(REFDATADIR)
+    df = generate_dataframe(REFDATADIR,supportedrefstsv=SUPPORTEDREFSTSV)
     if '--tabulate' in sys.argv:
         # not documented, developer flag only
         print(tabulate(df, headers='keys', showindex=False, tablefmt='psql'))
