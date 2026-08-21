@@ -228,6 +228,7 @@ python3 $scriptsdir/generate_reference_assembly_dataframe.py $outdir $tsv | tee 
 # make sure the refdata_tsv - corresponding to the xlsx - is copied into the repo itself too!
 cp $refdata_tsv $datadir/$(basename $refdata_tsv)
 ls -al $refdata_tsv $datadir/$(basename $refdata_tsv)
+md5sum $refdata_tsv $datadir/$(basename $refdata_tsv)
 
 # 7. generate per-species reference (including mitochondrion, if applicable)
 $scriptsdir/build-species-references.sh $outdir
