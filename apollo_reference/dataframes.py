@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 def read_reference_species_df(fname:str=SPECIES_REFERENCE_TSV,schema:pa.DataFrameModel=ProvidedSchema) -> pd.DataFrame:
     """ read the/a reference species table and convert human-readable to machine-readable conventions """
     df = pd.read_csv(fname, sep="\t")
+    df._metadata.append("tsv_source")
+    df.tsv_source = fname
     # strip all exterior whitespace from text
     # !important! panda version >= 2.1.0 renamed to map
     df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
@@ -46,6 +48,8 @@ def read_reference_species_df(fname:str=SPECIES_REFERENCE_TSV,schema:pa.DataFram
 def read_reference_assembly_df(fname:str=ASSEMBLY_REFERENCE_TSV) -> pd.DataFrame:
     """ read the machine-generated reference assembly table (thus unvalidated) """
     df = pd.read_csv(fname, sep="\t")
+    df._metadata.append("tsv_source")
+    df.tsv_source = fname
     df['MT_num'] = df['MT_num'].astype('Int64')
     df['MT_length'] = df['MT_length'].astype('Int64')
     return df
@@ -59,6 +63,7 @@ def read_reference_species_and_assembly_df() -> pd.DataFrame:
     # pitch in MT assembly information
     dfasm = read_reference_assembly_df()
     df = pd.merge(df, dfasm, on='reference', how='left')
+    df.tsv_source = (df.tsv_source,dfasm.tsv_source)
     df['taxid'] = df['taxid'].astype('Int64')
     df = df[~df.taxid.isnull()]
     return df
