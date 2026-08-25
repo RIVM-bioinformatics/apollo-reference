@@ -24,9 +24,9 @@ except ModuleNotFoundError:
     from .configuration import REFERENCEDATA_YAML as CONFIGFILE
 
 # External package Imports (generic argparse helpers)
-from rivm_idsbioinfo_argparse_utils.actions import DynamicHelpTopicAction
-from rivm_idsbioinfo_argparse_utils.shortcuts import as_argparse_type
-from rivm_idsbioinfo_argparse_utils.formats.fasta import validate_fasta_file
+from rivm_ids_swc_argparseutils.actions import DynamicHelpTopicAction
+from rivm_ids_swc_argparseutils.shortcuts import as_argparse_type
+from rivm_ids_swc_argparseutils.formats.fasta import validate_fasta_file
 
 # read from config where the downloaded sequence data + mmidx indices should reside
 REPODIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
