@@ -28,8 +28,8 @@ VerifiedFile = NewType("VerifiedFile", Path)
 #    "Status": pa.Column(str, checks=pa.Check.isin(["Actief", "Inactief"])),
 #})
 
-accession_regex_ncbi="GC[AF]_\d{9}\.\d"
-accession_regex_rivm="RIVM\d{6}"
+accession_regex_ncbi=r"GC[AF]_\d{9}\.\d"
+accession_regex_rivm=r"RIVM\d{6}"
 accession_regex = r"^("+"|".join([accession_regex_ncbi,accession_regex_rivm])+")$"
 accession_regex_MT = accession_regex[0:-2]+"|included|)$"
 
