@@ -9,4 +9,6 @@ dependencies:
   - bioconda::samtools>=1.19
   - pip>=23.*
   - pip:
-    - -r ../../requirements.txt
+    - -r ../requirements.txt
+    # TODO: needs pinned @version
+    - git+https://github.com/RIVM-bioinformatics/rivm-ids-swc-argparseutils.git
