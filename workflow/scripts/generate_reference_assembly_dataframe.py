@@ -9,6 +9,7 @@ import sys
 from tabulate import tabulate
 from pathlib import Path
 from typing import Union
+import xml.etree.ElementTree as ET
 
 # hard-coded tsv file name, used in workflow-update-reference-assemblies.sh
 HARDCODED_SUPPORTED_REFERENCE_SPECIES_TSV = "supported-reference-species.tsv"
@@ -40,15 +41,53 @@ def generate_dataframe(REFDATADIR:Path,supportedrefstsv:Union[Path,None]=None) -
 
     # read files that link reference accession to taxId and cast into dataframe
     data = []
-    for xml in glob.glob(os.path.join(REFDATADIR, "WGS", "*.*.xml")):
-        _parts = Path(xml).stem.split(".")
+    for xml_path in glob.glob(os.path.join(REFDATADIR, "WGS", "*.*.xml")):
+        _parts = Path(xml_path).stem.split(".")
         accession = ".".join(_parts[0:-1])
         if delimited_accessions and not delimited_accessions.__contains__(accession):
             sys.stderr.write(f"ignoring {accession}; it's not in the provided {os.path.basename(supportedrefstsv)}\n")
             continue
-        taxId = _parts[-1]
+
+        # 1. define fallback TaxID from filename (in case XML corrupt or no species node)
+        fallback_taxId = _parts[-1]
+        taxId = fallback_taxId
+
+        # 2. search for species TaxID
+        try:
+            tree = ET.parse(xml_path)
+            root = tree.getroot()
+
+            # Zoek naar een Taxon binnen LineageEx waar Rank gelijk is aan 'species'
+            species_found = False
+            for taxon in root.findall(".//LineageEx/Taxon"):
+                rank_node = taxon.find("Rank")
+                if rank_node is not None and rank_node.text == "species":
+                    tax_id_node = taxon.find("TaxId")
+                    if tax_id_node is not None and tax_id_node.text:
+                        taxId = tax_id_node.text
+                        species_found = True
+                        break
+
+            # Optioneel: als er geen species in de LineageEx staat, kijk of de hoofd-Taxon zelf een species is
+            if not species_found:
+                main_rank = root.find(".//Taxon/Rank")
+                if main_rank is not None and main_rank.text == "species":
+                    main_id = root.find(".//Taxon/TaxId")
+                    if main_id is not None and main_id.text:
+                        taxId = main_id.text
+
+        except Exception as e:
+            sys.stderr.write(
+                f"Warning: Could not parse XML file {os.path.basename(xml_path)}: {e}. Using filename taxId instead.\n")
+
+        if fallback_taxId != taxId:
+            sys.stderr.write(
+                f"Warning: {os.path.basename(xml_path)} overrules taxId to species taxId {taxId}\n")
+
+        # augment to data
         data.append((accession, int(taxId)))
-    colnames = ['reference', 'taxid']   
+
+    colnames = ['reference', 'taxid']
     df = pd.DataFrame(data, columns=colnames)
     df.sort_values(list(reversed(colnames)), inplace=True)
 
@@ -117,7 +156,7 @@ if __name__ == "__main__":
         elif not os.path.isdir(REFDATADIR):
             raise IOError
     except:
-        help_text = "%s /path/to/multiref/dir [ and optional /path/to/apollo-reference/data/reference_assembly_data.tsv ]"
+        help_text = "%s /path/to/multiref/dir [ and optional /path/to/apollo-reference/data/supported-reference-species.tsv ]"
         print(help_text % sys.argv[0])
         sys.exit()
 
