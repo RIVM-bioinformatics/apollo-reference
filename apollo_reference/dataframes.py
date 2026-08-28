@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # Python Imports
-#import os
+import os
 import re
 import pandas as pd
 from typing import TYPE_CHECKING
@@ -10,9 +10,11 @@ from typing import TYPE_CHECKING
 try:
     from referencedata import ProvidedSchema
     from configuration import SPECIES_REFERENCE_TSV, ASSEMBLY_REFERENCE_TSV, FASTQ_REFERENCE_TSV
+    from configuration import ASSEMBLY_REFERENCE_TSV_BASE
 except ModuleNotFoundError:
     from .referencedata import ProvidedSchema
     from .configuration import SPECIES_REFERENCE_TSV, ASSEMBLY_REFERENCE_TSV, FASTQ_REFERENCE_TSV
+    from .configuration import ASSEMBLY_REFERENCE_TSV_BASE
 
 if TYPE_CHECKING:
     # doesn't happen during runtime
@@ -52,14 +54,16 @@ def read_reference_assembly_df(fname:str=ASSEMBLY_REFERENCE_TSV) -> pd.DataFrame
     df['MT_length'] = df['MT_length'].astype('Int64')
     return df
 
-def read_reference_species_and_assembly_df() -> pd.DataFrame:
-    """ TODO: read from input files as arguments """
-    df = read_reference_species_df()
-    ProvidedSchema.validate(df, lazy=True)
+def read_reference_species_and_assembly_df(fname:str=SPECIES_REFERENCE_TSV,schema:pa.DataFrameModel=ProvidedSchema) -> pd.DataFrame:
+    """ read a combined dataframe from the reference species & reference assembly table """
+    _SPECIES_REFERENCE_TSV = fname
+    _ASSEMBLY_REFERENCE_TSV = os.path.join(os.path.dirname(fname),ASSEMBLY_REFERENCE_TSV_BASE)
+    df = read_reference_species_df(_SPECIES_REFERENCE_TSV)
+    schema.validate(df, lazy=True)
     df.drop(columns=['ignore', 'literature', 'recent_name'], inplace=True)
     df.drop(columns=['datasource', 'category', 'ploidy'], inplace=True)
     # pitch in MT assembly information
-    dfasm = read_reference_assembly_df()
+    dfasm = read_reference_assembly_df(_ASSEMBLY_REFERENCE_TSV)
     tsv_source_attrs = (df.attrs["tsv_source"][0],dfasm.attrs["tsv_source"][0])
     df = pd.merge(df, dfasm, on='reference', how='left')
     df.attrs["tsv_source"] = tsv_source_attrs

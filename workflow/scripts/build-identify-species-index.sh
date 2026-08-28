@@ -2,7 +2,7 @@
 # build minimap2 index corresponding to all references registered in the provided ***references.tsv file
 #
 # !important! if adjusting, realize exterior apollo_reference expects this script to report
-#             as FINAL unquoted line the full path to the correspoding minimap2 assembly
+#             as FINAL unquoted line the full path to the corresponding minimap2 assembly
 #             By calling this script, one can retrieve (optionally build first)
 #             the corresponding species identification index given the $input_tsv
 #
@@ -12,8 +12,9 @@
 set +eu
 refdir=$1 || true
 validate_refdir $refdir
-# overrule input_tsv to the provided refdir
-input_tsv=$refdir/reference_assembly_data.tsv
+# allow providing external reference_assembly_data.tsv file;
+# vanilla fallback is of course to the one in the provided refdir
+input_tsv=${2:-$refdir/reference_assembly_data.tsv}
 validate_input_tsv $input_tsv;
 set -eu
 

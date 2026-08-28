@@ -18,10 +18,12 @@ import argparse
 # Package Imports
 try:
     from dataframes import read_reference_species_and_assembly_df
-    from configuration import REFERENCEDATA_YAML as CONFIGFILE
+    from configuration import REFERENCEDATA_YAML as CONFIGFILE, SPECIES_REFERENCE_TSV_BASE
+    from referencedata import get_identify_species_mmidx_relpath
 except ModuleNotFoundError:
     from .dataframes import read_reference_species_and_assembly_df
-    from .configuration import REFERENCEDATA_YAML as CONFIGFILE
+    from .configuration import REFERENCEDATA_YAML as CONFIGFILE, SPECIES_REFERENCE_TSV_BASE
+    from .referencedata import get_identify_species_mmidx_relpath
 
 # External package Imports (generic argparse helpers)
 from rivm_ids_swc_argparseutils.actions import DynamicHelpTopicAction
@@ -88,6 +90,31 @@ def add_out_prefix_argument(parser:argparse.ArgumentParser):
         help="file path prefix for yaml and the various dataframes with results",
     )
 
+
+def add_reference_dataset_scope(parser:argparse.ArgumentParser):
+    """ adds the reference dataset configuration argument (and group) """
+
+    class TrackProvidedAction(argparse._StoreAction):
+        def __call__(self, parser, namespace, values, option_string=None):
+            # Mark that the user explicitly provided this argument
+            setattr(namespace, f"{self.dest}_is_provided", True)
+            # Store the value normally
+            super().__call__(parser, namespace, values, option_string)
+
+    _group = parser.add_argument_group('Arguments to switch reference dataset scope')
+
+    _group.add_argument(
+        "--reference-dataset",
+        # TODO: refactor validate_reference_dataset / actual_validate_reference_dataset from apollo_mapping to here
+        #type=as_argparse_type(validate_reference_dataset),
+        metavar="[PATH]",
+        default=REFERENCE_DATA_DIR,
+        dest="reference_dataset",
+        action=TrackProvidedAction,
+        help=f"Custom Reference Dataset directory to use; overrules the default supported reference set [{REFERENCE_DATA_DIR}]."
+    )
+
+
 def get_parser() -> argparse.ArgumentParser:
     """ Construct the ArgumentParser for the/this match-ref.py script """
     descr = "process a SAM file (minimapped PE fastq) in search for the best corresponding species (taxID) and assembly"
@@ -103,6 +130,7 @@ def get_parser() -> argparse.ArgumentParser:
         help="(unsorted) headered SAM file",
     )
     add_out_prefix_argument(parser)
+    add_reference_dataset_scope(parser)
 
     _group = parser.add_argument_group('Arguments to exclude (mitochondrial) accessions that occur in the index')
     group = _group.add_mutually_exclusive_group()
@@ -191,9 +219,9 @@ def get_samtools_stats_summary_stats_dataframe(sam_file:Path) -> pd.DataFrame:
     df.index.name = "property"
     return df
 
-def match_reference_given_unsorted_sam(args:argparse.Namespace) -> Tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]:
+def match_reference_given_unsorted_sam(sam_file:str) -> Tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]:
     """ """
-    # read dataframe containing all fasta accessions linked to speciestags & taxIds
+    # Read dataframe containing all fasta accessions linked to speciestags & taxIds
     # TODO: should be read from the <REFERENCE_DATA_DIR>/refs directory, which included the mitochondria
     indices = [ Path(f) for f in glob.glob(os.path.join(REFERENCE_DATA_DIR,"WGS/*.fai")) ]
     taxrecords = [ Path(f) for f in glob.glob(os.path.join(REFERENCE_DATA_DIR,"WGS/*.xml")) if REGEX_PATH_TAX_RECORD.match(f) ]
@@ -201,16 +229,16 @@ def match_reference_given_unsorted_sam(args:argparse.Namespace) -> Tuple[pd.Data
         raise IOError("expected to find *.fai and *.xml files, found %s / %s" % (len(indices),len(taxrecords)))
     df = get_accession_index_dataframe(indices,taxrecords)
 
-    # now get counts from the (potentiall huge) sam file
-    counts = get_accession_counter_from_sam_file(args.sam_file)
+    # now get counts from the (potentially huge) sam file
+    counts = get_accession_counter_from_sam_file(sam_file)
 
     #print(df.head())
     #print(df.shape)
     #print(counts.most_common(10))
 
     # TODO: get "total_reads" from samtools stats SN, containing much more info
-    df_stats = get_samtools_stats_summary_stats_dataframe(args.sam_file)
-    total_reads = get_paired_end_read_count_from_sam_file(args.sam_file)
+    df_stats = get_samtools_stats_summary_stats_dataframe(sam_file)
+    total_reads = get_paired_end_read_count_from_sam_file(sam_file)
     total_mapped = sum(counts.values())
 
     # connect the counts and the species dataframe
@@ -233,6 +261,7 @@ def match_reference_given_unsorted_sam(args:argparse.Namespace) -> Tuple[pd.Data
     grouped_by_reference = df.groupby(['reference', 'taxid'], as_index=False)[['observed']].sum()
     add_ratio_sort_and_reindex(grouped_by_reference)
     grouped_by_taxid = df.groupby(['taxid'], as_index=False)[['observed']].sum()
+    grouped_by_taxid['taxid'] = grouped_by_taxid['taxid'].astype('Int64')
     add_ratio_sort_and_reindex(grouped_by_taxid)
     return ( grouped_by_reference, grouped_by_taxid, df_stats )
 
@@ -347,8 +376,42 @@ def _write_yaml_from_list(yamltxt:List[str],filename:str,verbose:bool=False) -> 
 
 def matchref(verbose:bool=True) -> None:
     """ main entry point of this script """
-    args = get_parser().parse_args()
-    grouped_by_reference, grouped_by_taxid, df_stats = match_reference_given_unsorted_sam(args)
+    parser = get_parser()
+    args = parser.parse_args()
+
+    # Read dataframe that links genomic/species accessions to reference fasta files
+    # !important! at the species level, those defined as cladegroups should result in
+    #             species fallback to the "is_primary" accession
+    #             The dataframe/tsv (from xlsx) is validated by referencedata.ProvidedSchema
+    #             that no inconsistencies are introduced in the dataframe.
+    if hasattr(args,"reference_dataset_is_provided"):
+        tsv = os.path.join(args.reference_dataset,SPECIES_REFERENCE_TSV_BASE)
+        refs_strains = read_reference_species_and_assembly_df(tsv)
+    else:
+        refs_strains = read_reference_species_and_assembly_df()
+
+    # convert to reference species (ignoring strains from multi-strain cladegroups)
+    refs_species = refs_strains[((refs_strains.is_primary == True) | (refs_strains.is_primary.isnull()))].copy()
+
+    # inspect the mmidx of the  reference data apollo-reference is/should be connected to
+    mmidx = get_identify_species_mmidx_relpath(refs_strains)
+
+    # verify that the index used for matching correspond to the connected one
+    cmd = f"""samtools view -H {args.sam_file} | grep "@PG" | grep minimap2 | grep -Pow "[^ /]+\\.mmidx" """
+    mmidx_used = subprocess.run(cmd, shell=True, capture_output=True, text=True).stdout.strip()
+    if mmidx_used != mmidx:
+        _insam=f"    [{mmidx_used}] in {args.sam_file}"
+        _tsv = refs_strains.attrs["tsv_source"][0]
+        _inref=f"    [{mmidx}] in {_tsv}"
+        msg = f"mmidx conflict in the one stated in SAM vs the configured referencedata:\n{_insam}\n{_inref}\n"
+        parser.error(msg)
+
+    if verbose:
+        print("# reference dataset  :",args.reference_dataset)
+        print("# corresponding mmidx:",mmidx)
+
+    # parse mapping-per-reference statistics into dataframes
+    grouped_by_reference, grouped_by_taxid, df_stats = match_reference_given_unsorted_sam(args.sam_file)
 
     if verbose:
         print(tabulate(grouped_by_reference.head(10), headers='keys', tablefmt='psql'))
@@ -358,22 +421,29 @@ def matchref(verbose:bool=True) -> None:
     # write the dataframe files
     grouped_by_reference.to_csv(args.out_prefix+"-match-ref-reference.tsv",sep='\t')
     grouped_by_taxid.to_csv(args.out_prefix+"-match-ref-taxid.tsv",sep='\t')
-    grouped_by_taxid.to_csv(args.out_prefix+"-samtools-stats.tsv",sep='\t')
-
-    # Read dataframe that links genomic/species accessions to reference fasta files
-    # !important! at the species level, those defined as cladegroups should result in
-    #             species fallback to the "is_primary" accession
-    #             The dataframe/tsv (from xlsx) is validated by referencedata.ProvidedSchema
-    #             that no inconsistencies are introduced in the dataframe.
-    refs_strains = read_reference_species_and_assembly_df()
-    refs_species = refs_strains[((refs_strains.is_primary == True) | (refs_strains.is_primary.isnull()))].copy()
+    df_stats.to_csv(args.out_prefix+"-samtools-stats.tsv",sep='\t')
+    if verbose:
+        print("# written:",args.out_prefix+"-match-ref-reference.tsv")
+        print("# written:",args.out_prefix+"-match-ref-taxid.tsv")
+        print("# written:",args.out_prefix+"-samtools-stats.tsv")
 
     # Get (majority-voted) best matches (species, optionally strain) as NamedTuples
     # From these, link it to the 'refs' dataframe record containing corresponding fasta file names
     # Write this info to <prefix>-references.yml
     # Since the output yml is drop-dead simple, decided to manually write it (not using pyyaml)
     best_matched_species = get_first_rec_as_row(grouped_by_taxid)
-    best_species = get_first_rec_as_row(refs_species[refs_species.taxid==best_matched_species.taxid])
+    best_matched_taxid = int(best_matched_species.taxid)
+    if verbose:
+        print("best_matched_species:",best_matched_species, best_matched_taxid)
+        print("refs_species.dtypes")
+        print(refs_species.dtypes)
+        print("grouped_by_taxid.dtypes")
+        print(grouped_by_taxid.dtypes)
+        print("refs_species.taxid set")
+        print(refs_species.attrs["tsv_source"])
+        print(set(refs_species.taxid.tolist()))
+        print(refs_species[["reference","taxid","fasta","species","clade"]].to_csv(sep="\t"))
+    best_species = get_first_rec_as_row(refs_species[refs_species.taxid==best_matched_taxid])
     #print(best_matched_species)
     #print(best_species)
     yamltxt = [
@@ -407,6 +477,7 @@ def generate_forced_reference_file() -> None:
     """ generate a "forced" reference/strain yaml file which overrules match-ref.py vanilla *-references.yml file """
     parser = get_forced_parser()
     args = parser.parse_args()
+    REFERENCE_DATA_DIR = args.reference_data_dir
 
     if args.custom:
         # exterior provide fasta sequences.

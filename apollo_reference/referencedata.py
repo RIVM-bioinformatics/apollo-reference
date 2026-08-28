@@ -255,7 +255,12 @@ def validate_reference_dataset_multiclade_requirements(dbpath:Union[Path|str],df
     return True
 
 def get_identify_species_mmidx_relpath(df:pd.DataFrame=None) -> str:
-    """ generate the apollo-species-refs.<md5hash>.mmidx from the provided dataframe """
+    """ generate the apollo-species-refs.<md5hash>.mmidx from the provided dataframe
+
+    Dataframe should be the one derived from:
+        - read_reference_assembly_df
+        - read_reference_species_and_assembly_df
+    """
     # check if the correct dataframe format was provided
     validate_df_using_pa(df, DerivedSchema)
     md5hash = get_species_index_hash_from_df(df)
